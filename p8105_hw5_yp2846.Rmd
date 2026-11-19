@@ -41,6 +41,7 @@ birthday_results |>
     y = "Probability of Shared Birthdays"
   )
 ```
+
 The probability of at least two people sharing a birthday increases as the group size increases. The probability reaches approximately 50% with 23 people and increases to about 97% with 50 people. Although there are 365 possible birthdays, the probability increases quickly because the number of possible pairs grows as more people are added to the group.
 
 
@@ -53,7 +54,9 @@ longitudinal_files =
     files = list.files("data/"),
     path = str_c("data/", files)
   ) |>
-  mutate(data = map(path, read_csv)) %>% 
+  mutate(
+      data = map(path, ~read_csv(.x, show_col_types = FALSE))
+  ) |> 
   unnest(cols = c(data))
 
 longitudinal_data =
@@ -89,6 +92,7 @@ longitudinal_data |>
   geom_line()+
   facet_grid(. ~ arm)
 ```
+
 The spaghetti plot shows different trends between the two groups. Observations in the control group fluctuate over the eight weeks without a clear increasing or decreasing trend, with most values between -2 and 4. In contrast, the experimental group shows a general upward trend, with observations reaching approximately 3 to 8 by week 8. Although individual trajectories vary, the difference between the two groups becomes larger over time, suggesting a possible positive treatment effect.
 
 
@@ -115,7 +119,7 @@ sim_results =
   mutate(
     results = map(mu, sim_t_test)
   ) |>
-  unnest(cols = c(results)) %>%
+  unnest(cols = c(results)) |>
   mutate(
     reject = p.value < 0.05
   )
@@ -141,6 +145,7 @@ power_results |>
     y = "Power"
   )
 ```
+
 The probability of rejecting the null hypothesis increases as the true mean increases. When the true mean is 0, the rejection proportion is approximately 0.05, consistent with the significance level. Power increases from about 0.19 at a true mean of 1 to about 0.89 at a true mean of 3, and approaches 1 when the true mean reaches 4. This suggests that larger effect sizes are more likely to be detected when the sample size and standard deviation remain fixed.
 
 
