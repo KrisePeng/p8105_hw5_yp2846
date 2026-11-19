@@ -9,6 +9,88 @@ library(rvest)
 
 # Problem 1
 ```{r}
+set.seed(123)
 
+birthday_sim = function(n) {
+  birthdays = sample(1:365, size = n, replace = TRUE)
+  any(duplicated(birthdays))
+}
+
+birthday_results =
+  expand_grid(
+    group_size = 2:50,
+    iter = 1:10000
+  ) |>
+  mutate(
+    shared_birthday = map_lgl(group_size, birthday_sim)
+  ) |>
+  group_by(group_size) |>
+  summarize(
+    probability = mean(shared_birthday),
+    .groups = "drop"
+  )
 ```
+
+## Problem 2
+
+```{r}
+longitudinal_files =
+  tibble(
+    files = list.files("data/"),
+    path = str_c("data/", files)
+  ) %>% 
+  mutate(data = map(path, read_csv)) %>% 
+  unnest(cols = c(data))
+
+longitudinal_data =
+  longitudinal_files |>
+  mutate(
+    arm = if_else(
+      str_detect(files, "^con_"),
+      "control",
+      "experimental"
+    ),
+    subject_id = str_extract(
+      files,
+      "\\d+"
+    )
+  ) |>
+  pivot_longer(
+    cols = starts_with("week_"),
+    names_to = "week",
+    values_to = "observation"
+  ) |>
+  mutate(
+    week = as.numeric(str_remove(week, "week_"))
+  )|>
+  select(
+    subject_id, arm, week, observation
+  )
+```
+
+```{r}
+longitudinal_data |>
+  ggplot(
+    aes(
+      x = week,
+      y = observation,
+      group = interaction(arm, subject_id),
+      color = arm
+    )
+  ) +
+  geom_line() +
+  geom_point() +
+  facet_grid(. ~ arm) +
+  scale_x_continuous(breaks = 1:8) +
+  labs(
+    title = "Longitudinal Observations by Treatment Arm",
+    x = "Week",
+    y = "Observation",
+    color = "Treatment Arm"
+  )+ theme(legend.position = "none")
+```
+The spaghetti plot shows different trends between the two groups. Observations in the control group fluctuate over time without a clear increasing or decreasing trend. In contrast, observations in the experimental group generally increase over the eight weeks. Although there is some variation among participants, the difference between the two groups becomes larger over time, suggesting a possible positive treatment effect.
+
+
+
 
